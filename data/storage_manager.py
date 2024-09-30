@@ -25,9 +25,9 @@ class StorageManager:
         else:
             return None
 
-    def get_all_device_descriptions(self) -> list[str]:
+    def get_all_device_descriptions(self) -> dict[str, str]:
         """ Return all the device Descriptions """
-        return list(self.device_description_dict.values())
+        return self.device_description_dict
 
     def store_measurement(self, device_id: str, measurement: str) -> None:
         """ Store a measurement for a devices. It can be associated both a variation of a
@@ -41,8 +41,8 @@ class StorageManager:
         return self.device_measurement_dict.get(device_id, [])
 
     # Get all measurements for all devices
-    def get_all_measurements(self) -> list[str]:
+    def get_all_measurements(self) -> dict[str, list[str]]:
         """ Get all measurements for all devices """
-        return list(self.device_measurement_dict.values())
+        return self.device_measurement_dict
 
 

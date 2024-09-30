@@ -518,12 +518,20 @@ def get_json_measurement(self) -> str:
 
     # For each accelerometer sensor update the device descriptions and measurements
     for acc_sensor in self.accelerometer_sensor_list:
-        accelerometer_description_list.append(acc_sensor.get_json_measurement())
+        # I need to convert the JSON string to a dictionary in order to avoid nested JSON objects
+        dict_acc = json.loads(acc_sensor.get_json_measurement())
+        accelerometer_description_list.append(dict_acc)
+
+    # I need to convert the JSON string to a dictionary in order to avoid nested JSON objects
+    # for the switch and energy sensor
+
+    switch_measurement_dict = json.loads(self.switch.get_json_measurement())
+    energy_sensor_measurement_dict = json.loads(self.energy_sensor.get_json_measurement())
 
     result_dict = {
         "machine_id": self.device_id,
-        "switch": self.switch.get_json_measurement(),
-        "energy_sensor": self.energy_sensor.get_json_measurement(),
+        "switch": switch_measurement_dict,
+        "energy_sensor": energy_sensor_measurement_dict,
         "accelerometer_sensor_list": accelerometer_description_list
     }
 
