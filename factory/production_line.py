@@ -7,7 +7,9 @@ from random import random
 import json
 import time
 
+
 class ProductionLine:
+    """ Class representing a Production Line in a Factory supporting multiple Industrial Machines """
 
     def __init__(self, production_line_id: str, name: str, latitude: float, longitude:float, storage_manager: StorageManager):
         """Initialize the Production line with id, name and geographic coordinates"""
@@ -24,7 +26,7 @@ class ProductionLine:
         # Store the Production on the Data Manager
         self.storage_manager.store_device_description(self.line_id, self.get_json_description())
 
-    def add_industrial_machine(self, industrial_machine: IndustrialMachine):
+    def add_industrial_machine(self, industrial_machine: IndustrialMachine) -> None:
         """ Add a new machine to the production line """
 
         # Check if the parameter is an instance of IndustrialMachine
@@ -42,7 +44,7 @@ class ProductionLine:
         else:
             raise ValueError("Wrong type for industrial_machine parameter ! Expected is IndustrialMachine ...")
 
-    def remove_industrial_machine(self, industrial_machine_id: str):
+    def remove_industrial_machine(self, industrial_machine_id: str) -> None:
         """ Remove a machine from the production line """
 
         # Check if the machine is in the dictionary

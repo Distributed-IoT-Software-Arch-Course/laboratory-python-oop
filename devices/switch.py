@@ -1,14 +1,15 @@
 from .actuator import Actuator
 import time
 
+
 class Switch(Actuator):
     """ Class representing a Switch Actuator """
 
     # Static Class's attributes used to define action types and values
-    STATUS_ON = "ON"
-    STATUS_OFF = "OFF"
-    ACTUATOR_TYPE = "iot.actuator.switch"
-    ACTION_TYPE_SWITCH = "SWITCH"
+    STATUS_ON: str = "ON"
+    STATUS_OFF: str = "OFF"
+    ACTUATOR_TYPE: str = "iot.actuator.switch"
+    ACTION_TYPE_SWITCH: str = "SWITCH"
 
     def __init__(self, device_id: str):
         """ Initialize the smart light with a devices ID and an initial state """
@@ -20,7 +21,7 @@ class Switch(Actuator):
         # Set the timestamp to None, subclasses should set the timestamp when updating the status
         self.timestamp = int(time.time() * 1000)
 
-    def invoke_action(self, action_type: str, payload: str):
+    def invoke_action(self, action_type: str, payload: str) -> None:
         """ Invoke an action on the smart light """
 
         # Check if action_type Type and payload are Strings

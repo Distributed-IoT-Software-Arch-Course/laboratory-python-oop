@@ -4,13 +4,13 @@ from .sensor import Sensor
 
 
 class AccelerometerSensor(Sensor):
-    """ Accelerometer Sensor class, extends Sensor class implementing get_status method """
+    """ Accelerometer Sensor class, extends Sensor class """
 
     # Sensor Type
-    SENSOR_TYPE = "iot.sensor.accelerometer"
+    SENSOR_TYPE: str = "iot.sensor.accelerometer"
 
     # Sensor Value Unit
-    ACCELERATION_UNIT = "Acceleration"
+    ACCELERATION_UNIT: str = "Acceleration"
 
     def __init__(self, device_id: str):
         """ Initialize the temperature sensor with a devices ID and an initial temperature """
@@ -29,7 +29,7 @@ class AccelerometerSensor(Sensor):
         # Set the Temperature Sensor Unit to Celsius
         self.unit = AccelerometerSensor.ACCELERATION_UNIT
 
-    def update_measurement(self):
+    def update_measurement(self) -> None:
         """ Update the measurement of the sensor with a random increment """
 
         self.value['x_axis'] = randint(-400, 400)

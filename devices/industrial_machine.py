@@ -2,13 +2,14 @@ from devices.accelerometer_sensor import AccelerometerSensor
 from devices.device import Device
 from devices.energy_sensor import EnergySensor
 from devices.switch import Switch
+import json
 
 
 class IndustrialMachine(Device):
     """ Industrial Machine class, extends Device Class and add new features, attributes and methods """
 
     # Device Type
-    DEVICE_TYPE = "iot.industrial.machine"
+    DEVICE_TYPE: str = "iot.industrial.machine"
 
     def __init__(self, device_id: str, accelerometer_sensor_number: int = 3):
         """ Initialize the device with the devices ID, type and manufacturer """
@@ -17,7 +18,8 @@ class IndustrialMachine(Device):
         # Declare and initialize the Machine Energy Monitoring Sensor (assign an Id starting from the machine Id)
         self.energy_sensor = EnergySensor(f'{self.device_id}_energy_sensor')
 
-        # Declare and initialize the Machine Energy Monitoring Switch Actuator (assign an Id starting from the machine Id)
+        # Declare and initialize the Machine Energy Monitoring Switch Actuator
+        # (assign an Id starting from the machine Id)
         self.switch = Switch(f'{self.device_id}_switch')
 
         # Declare and initialize the list to store machine's accelerometer sensors
@@ -27,7 +29,7 @@ class IndustrialMachine(Device):
         for sensor_index in range(accelerometer_sensor_number):
             self.accelerometer_sensor_list.append(AccelerometerSensor(f'{self.device_id}_switch_{sensor_index}'))
 
-    def update_measurements(self):
+    def update_measurements(self) -> None:
         """Update all the measurements for the sensors associated to the Machine (energy and accelerometer)"""
         # Update Energy Sensor Measurements
         self.energy_sensor.update_measurement()
@@ -36,7 +38,7 @@ class IndustrialMachine(Device):
         for acc_sensor in self.accelerometer_sensor_list:
             acc_sensor.update_measurement()
 
-    def get_json_description(self):
+    def get_json_description(self) -> str:
         """Return the list of last values for each device of the Industrial Machine
         This implementation is custom with respect to the default implementation in the Device class
         since it includes the list of accelerometer sensors, energy sensor, actuators and the machine information"""
@@ -47,7 +49,7 @@ class IndustrialMachine(Device):
         for acc_sensor in self.accelerometer_sensor_list:
             accelerometer_description_list.append(acc_sensor.get_json_description())
 
-        return {
+        result_dict = {
             "machine_id": self.device_id,
             "machine_type": self.device_type,
             "machine_manufacturer": self.device_manufacturer,
@@ -56,7 +58,9 @@ class IndustrialMachine(Device):
             "accelerometer_sensor_id_list": accelerometer_description_list
         }
 
-    def get_json_measurement(self):
+        return json.dumps(result_dict)
+
+    def get_json_measurement(self) -> str:
         """Return the list of last values for each device of the Industrial Machine
         This implementation is custom with respect to the default implementation in base class
         since it includes the measurements of accelerometer sensors, energy sensor, actuators and the machine information"""
@@ -67,14 +71,16 @@ class IndustrialMachine(Device):
         for acc_sensor in self.accelerometer_sensor_list:
             accelerometer_description_list.append(acc_sensor.get_json_measurement())
 
-        return {
+        result_dict = {
             "machine_id": self.device_id,
             "switch": self.switch.get_json_measurement(),
             "energy_sensor": self.energy_sensor.get_json_measurement(),
             "accelerometer_sensor_list": accelerometer_description_list
         }
 
-    def start(self):
+        return json.dumps(result_dict)
+
+    def start(self) -> None:
         """ Start machine operations setting the actuator to ON and updating a sample of available sensors"""
 
         # Turn ON the switch
@@ -83,8 +89,7 @@ class IndustrialMachine(Device):
         # Update Machine Measurements
         self.update_measurements()
 
-
-    def stop(self):
+    def stop(self) -> None:
         """ Stop machine operations setting the actuator to OFF and updating a sample of available sensors"""
 
         # Update Sensor Measurements (energy and accelerometer)

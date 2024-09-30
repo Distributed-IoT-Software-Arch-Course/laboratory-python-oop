@@ -1,5 +1,4 @@
 import time
-import json
 from .sensor import Sensor
 from random import random
 
@@ -8,10 +7,10 @@ class EnergySensor(Sensor):
     """ Energy Monitoring sensor class, extends Sensor class implementing the required methods of the base class"""
 
     # Sensor Type
-    SENSOR_TYPE = "iot.sensor.energy"
+    SENSOR_TYPE: str = "iot.sensor.energy"
 
     # Kilo-watt per hour unit
-    KILO_WATT_HOUR_UNIT = "kWh"
+    KILO_WATT_HOUR_UNIT: str = "kWh"
 
     def __init__(self, device_id: str, initial_kwh: int = 0):
         """ Initialize the energy sensor with a devices ID and an initial humidity level """
@@ -26,7 +25,7 @@ class EnergySensor(Sensor):
         # Set Unit of Sensor Value
         self.unit = EnergySensor.KILO_WATT_HOUR_UNIT
 
-    def update_measurement(self):
+    def update_measurement(self) -> None:
         """ Update the Kwh measurement of the sensor with a random increment """
 
         # Update the measurement with a random increment or decrement
