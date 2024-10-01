@@ -613,9 +613,9 @@ def get_device_description(self, device_id: str) -> Optional[str]:
     else:
         return None
 
-def get_all_device_descriptions(self) -> list[str]:
+def get_all_device_descriptions(self) -> dict[str, str]:
     """ Return all the device Descriptions """
-    return list(self.device_description_dict.values())
+    return self.device_description_dict
 ```
 
 On the other hand, the methods to handle the device measurements are the following:
@@ -633,9 +633,9 @@ def get_measurements(self, device_id) -> list[str]:
     return self.device_measurement_dict.get(device_id, [])
 
 # Get all measurements for all devices
-def get_all_measurements(self) -> list[str]:
+def get_all_measurements(self) -> dict[str, str]:
     """ Get all measurements for all devices """
-    return list(self.device_measurement_dict.values())
+    return self.device_measurement_dict
 ```
 
 ## Production Line Class
