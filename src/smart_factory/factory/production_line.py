@@ -1,8 +1,8 @@
 from typing import Dict
 from typing import Optional
-from devices.switch import Switch
-from data.storage_manager import StorageManager
-from devices.industrial_machine import IndustrialMachine
+from smart_factory.devices.switch import Switch
+from smart_factory.data.storage_manager import StorageManager
+from smart_factory.devices.industrial_machine import IndustrialMachine
 from random import random
 import json
 import time

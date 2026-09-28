@@ -1,10 +1,9 @@
-from data.storage_manager import StorageManager
-from devices.industrial_machine import IndustrialMachine
-from factory.production_line import ProductionLine
+from smart_factory.data.storage_manager import StorageManager
+from smart_factory.devices.industrial_machine import IndustrialMachine
+from smart_factory.factory.production_line import ProductionLine
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
 
+def main() -> None:
     # Create the Data Manager to handle application information
     storage_manager = StorageManager()
 
@@ -44,3 +43,7 @@ if __name__ == '__main__':
     for device_id, device_measurements in measurements.items():
         for measurement in device_measurements:
             print(f"Device {device_id} - Measurement: {measurement}")
+
+
+if __name__ == '__main__':
+    main()

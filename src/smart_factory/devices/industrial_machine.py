@@ -1,7 +1,7 @@
-from devices.accelerometer_sensor import AccelerometerSensor
-from devices.device import Device
-from devices.energy_sensor import EnergySensor
-from devices.switch import Switch
+from smart_factory.devices.accelerometer_sensor import AccelerometerSensor
+from smart_factory.devices.device import Device
+from smart_factory.devices.energy_sensor import EnergySensor
+from smart_factory.devices.switch import Switch
 import json
 
 

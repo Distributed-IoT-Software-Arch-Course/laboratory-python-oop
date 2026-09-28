@@ -39,8 +39,200 @@ a central system to collect and manage data.
 
 **Note:** The scenario is simplified without any kind of communication, and everything is running within the same process. 
 
+## Laboratory Setup
+
+Before writing any class, follow these steps to create and configure the Python project.
+The project is managed with [uv](https://docs.astral.sh/uv/), a fast Python package and project manager
+that takes care of the Python version, the virtual environment and the dependencies.
+
+### Step 1 - Install uv
+
+Install `uv` following the [official guide](https://docs.astral.sh/uv/getting-started/installation/):
+
+```bash
+# Linux / macOS
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Open a new terminal and check the installation:
+
+```bash
+uv --version
+```
+
+### Step 2 - Create the Project
+
+Create a new packaged project (with the `src/` layout) called `smart-factory` and move into its folder:
+
+```bash
+uv init --package smart-factory
+cd smart-factory
+```
+
+`uv` generates the following structure:
+
+```text
+smart-factory/
+├── .gitignore             # uv also initializes a git repository
+├── .python-version        # Python version used by the project
+├── pyproject.toml         # Project metadata, dependencies and entry points
+├── README.md
+└── src/
+    └── smart_factory/     # The Python package that will contain all our code
+        └── __init__.py
+```
+
+Open `pyproject.toml` and take a look at it. The most important parts are:
+
+- `[project]`: name, version, required Python version and the list of `dependencies` (empty for now, we will only use the standard library)
+- `[project.scripts]`: the command (`smart-factory`) that launches the application and the function it calls
+- `[build-system]`: the tool used to build and install the package (`uv_build`)
+
+### Step 3 - First Run
+
+Run the (still empty) application:
+
+```bash
+uv run smart-factory
+```
+
+You should see `Hello from smart-factory!`. This message is printed by the example `main()` function that `uv` generated
+in `src/smart_factory/__init__.py`, which is the function called by the `smart-factory` command defined in the
+`[project.scripts]` section of `pyproject.toml` (`smart-factory = "smart_factory:main"`).
+
+The first time you run it, `uv` automatically:
+
+- downloads the required Python version (if not already available)
+- creates the virtual environment in the `.venv/` folder
+- creates the `uv.lock` file with the exact versions of all dependencies
+- installs the `smart_factory` package in the virtual environment
+
+> **Tip:** If you use an IDE (VS Code, PyCharm), select `.venv` as the Python interpreter of the project.
+
+### Step 4 - Create the Package Folders
+
+Create the sub-packages that will host the classes of the laboratory (each folder needs an `__init__.py` file)
+and the `main.py` file that will contain the entry point of the application:
+
+```bash
+mkdir -p src/smart_factory/data src/smart_factory/devices src/smart_factory/factory
+touch src/smart_factory/data/__init__.py src/smart_factory/devices/__init__.py src/smart_factory/factory/__init__.py
+touch src/smart_factory/main.py
+```
+
+> **Note:** using the command line is not mandatory. You can create the same folders and (empty) files directly from the
+> graphical interface of your IDE (e.g., VS Code or PyCharm: right click on the folder → *New Folder* / *New File*)
+> or from your file manager. This is also the easiest option on Windows, where `mkdir -p` and `touch` may not be available.
+
+### Step 5 - Configure the Entry Point
+
+The application will start from the `main()` function defined in `src/smart_factory/main.py`.
+Open `pyproject.toml` and update the `[project.scripts]` section to point to it:
+
+```toml
+[project.scripts]
+smart-factory = "smart_factory.main:main"
+```
+
+Then remove the example `main()` function from `src/smart_factory/__init__.py` (the file can be left empty).
+
+Optionally, create the file `src/smart_factory/__main__.py` to also run the package with `python -m smart_factory`:
+
+```python
+from smart_factory.main import main
+
+if __name__ == '__main__':
+    main()
+```
+
+### Alternative Setup - Without uv (pip)
+
+If you cannot (or do not want to) use `uv`, you can obtain the same project using only Python (3.12 or newer) and `pip`.
+In this case you have to do by hand what `uv` does automatically.
+
+1. Create the project folder with the same `src/` structure described in Step 2 and Step 4
+   (from the command line or from the graphical interface of your IDE):
+
+    ```text
+    smart-factory/
+    ├── pyproject.toml
+    └── src/
+        └── smart_factory/
+            ├── __init__.py
+            ├── main.py
+            ├── data/
+            │   └── __init__.py
+            ├── devices/
+            │   └── __init__.py
+            └── factory/
+                └── __init__.py
+    ```
+
+2. Write the `pyproject.toml` file (the same content that `uv` would generate, already configured as in Step 5):
+
+    ```toml
+    [project]
+    name = "smart-factory"
+    version = "0.1.0"
+    requires-python = ">=3.12"
+    dependencies = []
+
+    [project.scripts]
+    smart-factory = "smart_factory.main:main"
+
+    [build-system]
+    requires = ["uv_build>=0.11.29,<0.12.0"]
+    build-backend = "uv_build"
+    ```
+
+    > **Note:** `uv_build` is only the build backend: `pip` downloads it automatically to install the package,
+    > you do not need to install `uv` itself.
+
+3. Create and activate a virtual environment, then install the project in editable mode
+   (changes to the source code are immediately visible without reinstalling):
+
+    ```bash
+    cd smart-factory
+    python3 -m venv .venv
+    source .venv/bin/activate      # Linux / macOS
+    # .venv\Scripts\activate       # Windows
+    pip install -e .
+    ```
+
+    > **Note - `requirements.txt`:** with `uv` this file is not needed, because dependencies are declared in
+    > `pyproject.toml` and pinned in `uv.lock`. In pip-based projects it is common to list the dependencies in a
+    > `requirements.txt` file and install them with `pip install -r requirements.txt`. If needed, `uv` can generate it
+    > from the project with `uv export --format requirements-txt --no-hashes -o requirements.txt`.
+    > For this project (no external dependencies) it would only contain the project itself in editable mode:
+    >
+    > ```text
+    > # This file was autogenerated by uv via the following command:
+    > #    uv export --format requirements-txt --no-hashes -o requirements.txt
+    > -e .
+    > ```
+
+4. With the virtual environment active, run the application with:
+
+    ```bash
+    smart-factory
+    ```
+
+> **Important:** the rest of this laboratory uses `uv`. If you chose the `pip` setup, every time you find
+> `uv run <command>` just run `<command>` inside the activated virtual environment
+> (e.g., `uv run smart-factory` becomes `smart-factory`).
+
+You are now ready to start! Follow the next sections to create the classes of the laboratory and,
+at the end, run the application as described in [How to Run](#how-to-run).
+
+> **Already cloned this repository?** The project is already configured: just run `uv sync` to create the
+> virtual environment and then `uv run smart-factory` to launch the application.
+
 Playground Sections:
 
+- [Laboratory Setup](#laboratory-setup)
 - [Base Classes](#base-classes)
 - [Folders & Base Classes](#folders--base-classes)
 - [Device Class](#device-class)
@@ -53,6 +245,7 @@ Playground Sections:
 - [Storage Manager Class](#storage-manager-class)
 - [Production Line Class](#production-line-class)
 - [Main Application](#main-application)
+- [How to Run](#how-to-run)
 
 ## Base Classes
 
@@ -81,30 +274,41 @@ The basic classes (taken from the OOP Playground [Link](https://github.com/Distr
 
 ### Folders & Base Classes
 
-To organize your classes and files into different folders, you can follow these steps:  
-Create a Directory Structure: Organize your files into directories based on their functionality. 
-For example in our case we will have:  
+To organize your classes and files into different folders, we use the package structure created during the
+[Laboratory Setup](#laboratory-setup): all the files are organized into sub-packages of `src/smart_factory/`
+based on their functionality. At the end of the laboratory the project will have the following structure:  
 
 ```text
-smart_factory_project/
-├── data
-    ├── __init__.py
-    ├── storage_manager.py
-├── devices/
-│   ├── __init__.py
-│   ├── accelerometer_sensor.py
-│   ├── actuator.py
-│   ├── device.py
-│   ├── energy_sensor.py
-│   ├── industrial_machine.py
-│   ├── sensor.py
-│   ├── switch.py
-├── factory/
-│   ├── __init__.py
-│   ├── production_line.py
-├── main.py
+smart-factory/
+├── .python-version
+├── src/
+│   └── smart_factory/
+│       ├── __init__.py
+│       ├── __main__.py
+│       ├── main.py
+│       ├── data/
+│       │   ├── __init__.py
+│       │   └── storage_manager.py
+│       ├── devices/
+│       │   ├── __init__.py
+│       │   ├── accelerometer_sensor.py
+│       │   ├── actuator.py
+│       │   ├── device.py
+│       │   ├── energy_sensor.py
+│       │   ├── industrial_machine.py
+│       │   ├── sensor.py
+│       │   └── switch.py
+│       └── factory/
+│           ├── __init__.py
+│           └── production_line.py
+├── pyproject.toml
+├── uv.lock
 └── README.md
 ```
+
+The project follows the `src/` layout generated by `uv init --package`:
+all the source code lives in the `smart_factory` package inside the `src/` folder, while `pyproject.toml`
+describes the package and how to build/install it.
 
 Follow the previous structure while creating the different files in the project 
 presented during the next sections.
@@ -429,10 +633,10 @@ This class is in charge of modeling the behaviour of an Industrial Machine that 
 The class has the following structure:
 
 ```python
-from devices.accelerometer_sensor import AccelerometerSensor
-from devices.device import Device
-from devices.energy_sensor import EnergySensor
-from devices.switch import Switch
+from smart_factory.devices.accelerometer_sensor import AccelerometerSensor
+from smart_factory.devices.device import Device
+from smart_factory.devices.energy_sensor import EnergySensor
+from smart_factory.devices.switch import Switch
 import json
 
 
@@ -654,9 +858,9 @@ It also allows to monitor the machines for a specific amount of time. The class 
 ```python
 from typing import Dict
 from typing import Optional
-from devices.switch import Switch
-from data.storage_manager import StorageManager
-from devices.industrial_machine import IndustrialMachine
+from smart_factory.devices.switch import Switch
+from smart_factory.data.storage_manager import StorageManager
+from smart_factory.devices.industrial_machine import IndustrialMachine
 from random import random
 import json
 import time
@@ -855,19 +1059,18 @@ def start_monitoring(self, seconds=5) -> None:
 
 ## Main Application
 
-The `main.py` file is the entry point of the application. 
+The `src/smart_factory/main.py` file is the entry point of the application and exposes a `main()` function. 
 It creates the `StorageManager` instance and the `ProductionLine` instance and adds multiple `IndustrialMachine` instances to the production line.
 Then it starts the production line and monitors it for a specific amount of time.
 At the end, it retrieves the JSON description and measurements of the production line and saves them in the storage manager.
 
 ```python
-from data.storage_manager import StorageManager
-from devices.industrial_machine import IndustrialMachine
-from factory.production_line import ProductionLine
+from smart_factory.data.storage_manager import StorageManager
+from smart_factory.devices.industrial_machine import IndustrialMachine
+from smart_factory.factory.production_line import ProductionLine
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
 
+def main() -> None:
     # Create the Data Manager to handle application information
     storage_manager = StorageManager()
 
@@ -907,4 +1110,26 @@ if __name__ == '__main__':
     for device_id, device_measurements in measurements.items():
         for measurement in device_measurements:
             print(f"Device {device_id} - Measurement: {measurement}")
+
+
+if __name__ == '__main__':
+    main()
 ```
+
+## How to Run
+
+From the project root folder, run the application with `uv`:
+
+```bash
+uv run smart-factory
+```
+
+`uv run` makes sure that the virtual environment is up to date (creating it if needed) and then launches the
+`smart-factory` command defined in `pyproject.toml`, which calls the `main()` function in `src/smart_factory/main.py`.
+Alternatively, you can run the package as a module:
+
+```bash
+uv run python -m smart_factory
+```
+
+The application monitors the production line for 10 seconds and then prints the collected device descriptions and measurements.
