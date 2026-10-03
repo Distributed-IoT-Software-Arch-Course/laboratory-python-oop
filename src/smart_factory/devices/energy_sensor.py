@@ -9,14 +9,14 @@ class EnergySensor(Sensor):
     # Sensor Type
     SENSOR_TYPE: str = "iot.sensor.energy"
 
-    # Kilo-watt per hour unit
+    # Kilowatt-hour unit
     KILO_WATT_HOUR_UNIT: str = "kWh"
 
     def __init__(self, device_id: str, initial_kwh: int = 0):
-        """ Initialize the energy sensor with a devices ID and an initial humidity level """
+        """ Initialize the energy sensor with a devices ID and an initial energy value in kWh """
         super().__init__(device_id, EnergySensor.SENSOR_TYPE, "Acme Inc.")
 
-        # Initialize the humidity measurement
+        # Initialize the energy measurement (kWh)
         self.value = initial_kwh
 
         # Set the timestamp of the last measurement in milliseconds
@@ -28,13 +28,8 @@ class EnergySensor(Sensor):
     def update_measurement(self) -> None:
         """ Update the Kwh measurement of the sensor with a random increment """
 
-        # Update the measurement with a random increment or decrement
-        is_increment_decrement = random() > 0.5
-
-        if is_increment_decrement:
-            self.value += 2 * (random() + 0.5)
-        else:
-            self.value -= 2 * (random() + 0.5)
+        # The consumed energy is a cumulative counter, so it can only increase (random increment between 1 and 3 kWh)
+        self.value += 2 * (random() + 0.5)
 
         # Set the timestamp of the last measurement in milliseconds
         self.timestamp = int(time.time() * 1000)

@@ -255,9 +255,11 @@ The basic classes (taken from the OOP Playground [Link](https://github.com/Distr
   - `device_id`: Id of the device
   - `device_type`: Type of the device
   - `device_manufacturer`: Manufacturer of the device
-  - The Device class defines two core method that will be inherited by every subclasses: 
-    - `get_json_measurement`: Returns a JSON representation of the Status of the device (e.g., the last measurement o the last state of an actuator). This method should be implemented by subclasses.
+  - The Device class defines the following core methods that will be inherited by every subclasses: 
+    - `get_measurement_dict`: Returns the Status of the device as a Python dictionary (e.g., the last measurement o the last state of an actuator). This method should be implemented by subclasses.
+    - `get_json_measurement`: Returns a JSON representation of the Status of the device, serializing the dictionary returned by `get_measurement_dict`.
     - `get_json_description`: Returns a JSON representation of the Device. The Device class already provide a default implementation that can be applied to every device and subclasses (e.g., Sensor and Actuator)
+    - `get_description_dict`: Returns the description of the Device as a Python dictionary. It is used by `get_json_description` and can be overridden by subclasses to extend the description
 - `Sensor`: Base class for all sensors extending `Device` class and adding: 
   - Methods:
     - `update_measurement()`: update the sensor value. The default implementation throws a `NotImplementedError` exception and the subclasses must implement it. 
@@ -339,28 +341,40 @@ class Device:
         self.device_type = device_type
         self.device_manufacturer = device_manufacturer
 
-    def get_json_measurement(self) -> str:
-        """ Returns a JSON representation of the Sensor Status (e.g., the last measurement) """
+    def get_measurement_dict(self) -> dict:
+        """ Returns a dictionary representation of the Device Status (e.g., the last measurement).
+        This method should be overridden by subclasses """
         raise NotImplementedError("This method should be overridden by subclasses")
 
-    def get_json_description(self) -> str:
-        """ Returns a JSON representation of the Sensor Description """
+    def get_json_measurement(self) -> str:
+        """ Returns a JSON representation of the Device Status (e.g., the last measurement) """
+        return json.dumps(self.get_measurement_dict())
 
-        result_dict = {
+    def get_description_dict(self) -> dict:
+        """ Returns a dictionary representation of the Device Description.
+        Subclasses can override it to extend the description and compose it with other devices descriptions """
+
+        return {
             "device_id": self.device_id,
             "device_type": self.device_type,
             "device_manufacturer": self.device_manufacturer
         }
 
-        return json.dumps(result_dict)
+    def get_json_description(self) -> str:
+        """ Returns a JSON representation of the Device Description """
+        return json.dumps(self.get_description_dict())
 ```
 
-The method `get_json_measurement()` is not implemented since depends on the characteristics of the specific subclass
+The method `get_measurement_dict()` is not implemented since depends on the characteristics of the specific subclass
 like `Sensor` that returns last measurements (e.g., Temperature) or `Actuator` that instead return the last state.
+The method `get_json_measurement()` only serializes with `json.dumps()` the dictionary returned by `get_measurement_dict()`,
+so subclasses only need to override `get_measurement_dict()`.
 
 On the opposite, the method `get_json_description()` provides a default implementation describing the device in 
-terms of its `id`, `type`, and `manufacturer`. This implementation is usable by every subclass but of course it can 
-be overridden in order to customize or extend the behaviour.
+terms of its `id`, `type`, and `manufacturer`. The description is built by `get_description_dict()`, which returns a 
+Python dictionary, while `get_json_description()` only serializes it with `json.dumps()`. Subclasses customize or 
+extend the description by overriding `get_description_dict()`: in this way descriptions of different devices can be 
+composed as dictionaries and serialized to JSON only once, avoiding nested JSON strings.
 
 ## Sensors & Actuator Classes
 
@@ -401,20 +415,19 @@ def update_measurement(self) -> None:
     raise NotImplementedError("This method should be overridden by subclasses")
 ```
 
-On the other hand, the implementation of the `get_json_measurement` can be integrated in the `Sensor` class and then
-inherited by Sensors subclasses defining how sensor measurements are reported as JSON String.
+On the other hand, the implementation of the `get_measurement_dict` can be integrated in the `Sensor` class and then
+inherited by Sensors subclasses defining how sensor measurements are reported. The JSON String is then obtained
+through the `get_json_measurement` method inherited from the `Device` class.
 
 ```python
-def get_json_measurement(self) -> str:
-    """ Returns a JSON Measurement of the humidity sensor """
-    result_dict = {
+def get_measurement_dict(self) -> dict:
+    """ Returns a dictionary representation of the Sensor Status (e.g., the last measurement) """
+    return {
         "device_id": self.device_id,
         "value": self.value,
         "unit": self.unit,
         "timestamp": self.timestamp
     }
-
-    return json.dumps(result_dict)
 ```
 
 ### Actuator Class
@@ -450,18 +463,17 @@ def invoke_action(self, action_type: str, payload: str) -> None:
     raise NotImplementedError("This method should be overridden by subclasses")
 ```
 
-The 
+The `get_measurement_dict` method describes the current status of the actuator, which is then serialized as JSON String
+by the `get_json_measurement` method inherited from the `Device` class.
 
 ```python
-def get_json_measurement(self) -> str:
-    """ Returns a JSON representation of the Sensor Status (e.g., the last measurement) """
-    result_dict = {
+def get_measurement_dict(self) -> dict:
+    """ Returns a dictionary representation of the Actuator Status (e.g., the last status) """
+    return {
         "device_id": self.device_id,
         "status": self.status,
         "timestamp": self.timestamp
     }
-
-    return json.dumps(result_dict)
 ```
 
 ## Sensors & Actuator SubClasses
@@ -488,14 +500,14 @@ class EnergySensor(Sensor):
     # Sensor Type
     SENSOR_TYPE: str = "iot.sensor.energy"
 
-    # Kilo-watt per hour unit
+    # Kilowatt-hour unit
     KILO_WATT_HOUR_UNIT: str = "kWh"
 
     def __init__(self, device_id: str, initial_kwh: int = 0):
-        """ Initialize the energy sensor with a devices ID and an initial humidity level """
+        """ Initialize the energy sensor with a devices ID and an initial energy value in kWh """
         super().__init__(device_id, EnergySensor.SENSOR_TYPE, "Acme Inc.")
 
-        # Initialize the humidity measurement
+        # Initialize the energy measurement (kWh)
         self.value = initial_kwh
 
         # Set the timestamp of the last measurement in milliseconds
@@ -511,13 +523,8 @@ The next step is to add the `update_measurement` method to model the generation 
 def update_measurement(self) -> None:
     """ Update the Kwh measurement of the sensor with a random increment """
 
-    # Update the measurement with a random increment or decrement
-    is_increment_decrement = random() > 0.5
-
-    if is_increment_decrement:
-        self.value += 2 * (random() + 0.5)
-    else:
-        self.value -= 2 * (random() + 0.5)
+    # The consumed energy is a cumulative counter, so it can only increase (random increment between 1 and 3 kWh)
+    self.value += 2 * (random() + 0.5)
 
     # Set the timestamp of the last measurement in milliseconds
     self.timestamp = int(time.time() * 1000)
@@ -662,7 +669,7 @@ class IndustrialMachine(Device):
 
         # Initialize accelerometer sensors based of the parameter passed in the constructor (default = 3)
         for sensor_index in range(accelerometer_sensor_number):
-            self.accelerometer_sensor_list.append(AccelerometerSensor(f'{self.device_id}_switch_{sensor_index}'))
+            self.accelerometer_sensor_list.append(AccelerometerSensor(f'{self.device_id}_accelerometer_{sensor_index}'))
 ```
 
 The init method initializes the machine declaring and initializing the energy sensor, the switch actuator, and a list of accelerometer sensors.
@@ -683,63 +690,56 @@ def update_measurements(self) -> None:
 
 The `get_json_description` method is in charge of returning a JSON representation of the machine.
 Returns a JSON representation of the Device with the addition of the description of the energy sensor, the switch actuator, and the accelerometer sensors.
-It is a custom implementation that extends the default implementation of the `Device` class.
+The machine does not override `get_json_description` directly but `get_description_dict`, extending the default implementation of the `Device` class.
+Since each nested device returns its description as a dictionary, the whole structure is serialized with `json.dumps()` only once
+and the nested devices appear as JSON objects instead of escaped JSON strings.
 
 ```python
-def get_json_description(self) -> str:
-    """Return the list of last values for each device of the Industrial Machine
+def get_description_dict(self) -> dict:
+    """Return the description of the Industrial Machine as a dictionary
     This implementation is custom with respect to the default implementation in the Device class
-    since it includes the list of accelerometer sensors, energy sensor, actuators and the machine information"""
+    since it includes the descriptions of the accelerometer sensors, the energy sensor, the switch actuator
+    and the machine information. The json.dumps() of the base get_json_description() is applied only once
+    on the whole dictionary, so nested devices are serialized as JSON objects and not as JSON strings"""
 
+    # Collect the description of each accelerometer sensor
     accelerometer_description_list = []
-
-    # For each accelerometer sensor update the device descriptions and measurements
     for acc_sensor in self.accelerometer_sensor_list:
-        accelerometer_description_list.append(acc_sensor.get_json_description())
+        accelerometer_description_list.append(acc_sensor.get_description_dict())
 
-    result_dict = {
+    return {
         "machine_id": self.device_id,
         "machine_type": self.device_type,
         "machine_manufacturer": self.device_manufacturer,
-        "switch_id": self.switch.get_json_description(),
-        "energy_sensor_id": self.energy_sensor.get_json_description(),
-        "accelerometer_sensor_id_list": accelerometer_description_list
+        "switch": self.switch.get_description_dict(),
+        "energy_sensor": self.energy_sensor.get_description_dict(),
+        "accelerometer_sensor_list": accelerometer_description_list
     }
-
-    return json.dumps(result_dict)
 ```
 
 On the other hand, the `get_json_measurement` method is in charge of returning a JSON representation of the machine measurements.
-Also in this case it is a custom implementation that extends the default implementation of the `Device` class.
+Also in this case the machine overrides `get_measurement_dict`, composing the measurement dictionaries of the nested
+devices, and the whole structure is serialized only once by the `get_json_measurement` method of the `Device` class.
 
 ```python
-def get_json_measurement(self) -> str:
-    """Return the list of last values for each device of the Industrial Machine
-    This implementation is custom with respect to the default implementation in base class
-    since it includes the measurements of accelerometer sensors, energy sensor, actuators and the machine information"""
+def get_measurement_dict(self) -> dict:
+    """Return the last values of each device of the Industrial Machine as a dictionary
+    This implementation is custom with respect to the default implementation in the Device class
+    since it includes the measurements of the accelerometer sensors, the energy sensor, the switch actuator
+    and the machine id. The json.dumps() of the base get_json_measurement() is applied only once
+    on the whole dictionary, so nested devices are serialized as JSON objects and not as JSON strings"""
 
-    accelerometer_description_list = []
-
-    # For each accelerometer sensor update the device descriptions and measurements
+    # Collect the last measurement of each accelerometer sensor
+    accelerometer_measurement_list = []
     for acc_sensor in self.accelerometer_sensor_list:
-        # I need to convert the JSON string to a dictionary in order to avoid nested JSON objects
-        dict_acc = json.loads(acc_sensor.get_json_measurement())
-        accelerometer_description_list.append(dict_acc)
+        accelerometer_measurement_list.append(acc_sensor.get_measurement_dict())
 
-    # I need to convert the JSON string to a dictionary in order to avoid nested JSON objects
-    # for the switch and energy sensor
-
-    switch_measurement_dict = json.loads(self.switch.get_json_measurement())
-    energy_sensor_measurement_dict = json.loads(self.energy_sensor.get_json_measurement())
-
-    result_dict = {
+    return {
         "machine_id": self.device_id,
-        "switch": switch_measurement_dict,
-        "energy_sensor": energy_sensor_measurement_dict,
-        "accelerometer_sensor_list": accelerometer_description_list
+        "switch": self.switch.get_measurement_dict(),
+        "energy_sensor": self.energy_sensor.get_measurement_dict(),
+        "accelerometer_sensor_list": accelerometer_measurement_list
     }
-
-    return json.dumps(result_dict)
 ```
 
 The `start` and `stop` methods are in charge of starting and stopping the machine operations.
